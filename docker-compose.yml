@@ -1,4 +1,23 @@
 services:
+  api:
+    container_name: news_api
+    ports:
+      - "8000:8000"
+    build:
+      context: .
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=news
+      - DB_PASSWORD=OvoIpFrIL2VS
+      - DB_NAME=api
+    command: /bin/sh -c "sleep 10 && /app"  # Ждем 10 секунд перед запуском
+
   db:
     container_name: news_db
     image: postgres:13
@@ -9,16 +28,24 @@ services:
     environment:
       - POSTGRES_USER=news
       - POSTGRES_PASSWORD=OvoIpFrIL2VS
-      - POSTGRES_DB=api
+      - POSTGRES_DB=api  # Обратите внимание на имя базы данных
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./migrations:/migrations
 
   migrate:
     image: postgres:13
-    command: bash -c "psql -h db -U news -d api -f /migrations/schema/up.sql"
     depends_on:
       - db
+    command: >
+      bash -c "set -x &&
+      export PGPASSWORD=$POSTGRES_PASSWORD &&
+      until pg_isready -h db -p 5432 -U news; do sleep 1; done &&
+      psql -h db -U news -d api -f /migrations/schema/up.sql"
+    environment:
+      - POSTGRES_USER=news
+      - POSTGRES_PASSWORD=OvoIpFrIL2VS
+      - POSTGRES_DB=api
     volumes:
       - ./migrations:/migrations
 

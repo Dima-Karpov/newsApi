@@ -1,4 +1,10 @@
+# News API
 
+```
+git pull git@github.com:Dima-Karpov/newsApi.git
+make install
+make up
+```
 
 ### migrate
     1. docker-compose exec db bash

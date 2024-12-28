@@ -23,9 +23,9 @@ func main() {
 	}
 
 	rssURLs := cfg.RSS
-	requestPeriod := time.Duration(cfg.RequestPeriod) * time.Second
+	requestPeriod := time.Duration(cfg.RequestPeriod) * time.Minute
 	cfgDB := repository.Config{
-		DSN: "host=localhost port=5440 user=news password=OvoIpFrIL2VS dbname=api sslmode=disable",
+		DSN: "host=db port=5432 user=news password=OvoIpFrIL2VS dbname=api sslmode=disable",
 	}
 
 	db, err := repository.NewPostgresDB(cfgDB)
