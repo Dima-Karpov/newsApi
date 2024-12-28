@@ -1,0 +1,26 @@
+services:
+  db:
+    container_name: news_db
+    image: postgres:13
+    platform: linux/x86_64
+    restart: always
+    ports:
+      - "5440:5432"
+    environment:
+      - POSTGRES_USER=news
+      - POSTGRES_PASSWORD=OvoIpFrIL2VS
+      - POSTGRES_DB=api
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/migrations
+
+  migrate:
+    image: postgres:13
+    command: bash -c "psql -h db -U news -d api -f /migrations/schema/up.sql"
+    depends_on:
+      - db
+    volumes:
+      - ./migrations:/migrations
+
+volumes:
+  pgdata:
