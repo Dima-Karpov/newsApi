@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"github.com/mmcdole/gofeed"
 	"newsApi/internal/domain"
@@ -8,68 +9,54 @@ import (
 	"time"
 )
 
-// Логика работы с RSS
-
-type RSSFeed struct {
-	URL           string
-	PollInterval  time.Duration
-	ProcessedNews map[string]bool // Для предотвращения дублирования
-}
-
-// Структура, отвечающая за управление несколькими RSS-лентами.
 type RSSHandler struct {
-	Feeds  []RSSFeed
-	Output chan *domain.RSSItem
-	repo   *repository.Repository
+	repo         *repository.Repository
+	rssURLs      []string
+	pollInterval time.Duration
+	ctx          context.Context
 }
 
-// NewRSSHandler обработчик RSS
-func NewRSSHandler(repo *repository.Repository, urls []string, pollInterval time.Duration) *RSSHandler {
-	feeds := make([]RSSFeed, len(urls))
-	for i, url := range urls {
-		feeds[i] = RSSFeed{
-			URL:           url,
-			PollInterval:  pollInterval,
-			ProcessedNews: make(map[string]bool),
-		}
-	}
-
+func NewRSSHandler(repo *repository.Repository, urls []string, pollInterval time.Duration, ctx context.Context) *RSSHandler {
 	return &RSSHandler{
-		Feeds:  feeds,
-		Output: make(chan *domain.RSSItem),
-		repo:   repo,
+		repo:         repo,
+		rssURLs:      urls,
+		pollInterval: pollInterval,
+		ctx:          ctx,
 	}
 }
 
-// Start запускает обработку всех RSS-лент
 func (h *RSSHandler) Start() {
-	for _, feed := range h.Feeds {
-		go h.processFeed(feed)
-	}
-}
-
-// processFeed выполняет периодическое чтение одной RSS-ленты
-func (h *RSSHandler) processFeed(feed RSSFeed) {
 	parser := gofeed.NewParser()
+	ticker := time.NewTicker(h.pollInterval)
+	defer ticker.Stop()
+
+	// Выполняем первый запрос сразу
+	h.processFeeds(parser)
 
 	for {
-		fmt.Printf("Fetching RSS feed: %s\n", feed.URL)
+		select {
+		case <-h.ctx.Done():
+			fmt.Println("RSS handler shutting down...")
+			return
+		case <-ticker.C:
+			h.processFeeds(parser)
+		}
+	}
+}
+
+func (h *RSSHandler) processFeeds(parser *gofeed.Parser) {
+	for _, url := range h.rssURLs {
+		fmt.Printf("Fetching RSS feed: %s\n", url)
 
 		// Парсим RSS-ленту
-		parsedFeed, err := parser.ParseURL(feed.URL)
+		parsedFeed, err := parser.ParseURL(url)
 		if err != nil {
 			fmt.Printf("Error parsing RSS feed: %s\n", err)
-			time.Sleep(feed.PollInterval)
 			continue
 		}
 
 		// Обрабатываем записи из RSS-ленты
 		for _, item := range parsedFeed.Items {
-			if _, exists := feed.ProcessedNews[item.GUID]; exists {
-				continue // Пропускаем уже обработанные публикации
-			}
-
-			// Создаем новость
 			rssItem := &domain.RSSItem{
 				Title:       item.Title,
 				Description: item.Description,
@@ -77,20 +64,11 @@ func (h *RSSHandler) processFeed(feed RSSFeed) {
 				Link:        item.Link,
 			}
 
-			// Отправляем новость в канал
-			h.Output <- rssItem
-
-			// Помечаем новость как обработанную
-			feed.ProcessedNews[item.GUID] = true
-
 			// Сохраняем новость в базу через репозиторий
 			if err := h.repo.Save(rssItem); err != nil {
 				fmt.Printf("Error saving RSS feed: %s\n", err)
 				continue
 			}
 		}
-
-		// Ждем следующий цикл опроса
-		time.Sleep(feed.PollInterval)
 	}
 }

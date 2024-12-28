@@ -1,45 +1,82 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"newsApi/configs"
 	"newsApi/internal/delivery/router"
 	delivery "newsApi/internal/delivery/server"
 	"newsApi/internal/repository"
 	"newsApi/internal/service"
 	"newsApi/internal/usecase"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 )
 
 func main() {
-	rssURLs := []string{
-		"https://habr.com/ru/rss/hub/go/all/?fl=ru",
-		"https://habr.com/ru/rss/best/daily/?fl=ru",
-		"https://cprss.s3.amazonaws.com/golangweekly.com.xml",
+	cfg, err := configs.LoadConfig("configs/config.json")
+	if err != nil {
+		fmt.Printf("Error loading config: %s\n", err.Error())
+		return
 	}
+
+	rssURLs := cfg.RSS
+	requestPeriod := time.Duration(cfg.RequestPeriod) * time.Second
 	cfgDB := repository.Config{
 		DSN: "host=localhost port=5440 user=news password=OvoIpFrIL2VS dbname=api sslmode=disable",
 	}
 
 	db, err := repository.NewPostgresDB(cfgDB)
 	if err != nil {
-		fmt.Printf("Failed to initialize db: %s", err.Error())
+		fmt.Printf("Failed to initialize db: %s\n", err.Error())
+		return
 	}
 
+	// Создаем зависимости
 	repo := repository.NewRepository(db)
-	handlerRSS := usecase.NewRSSHandler(repo, rssURLs, 5*time.Minute)
 	services := service.NewService(repo)
 	handlerRouterNews := router.NewHandler(services)
 
+	// Создаём HTTP сервер
 	srv := new(delivery.Server)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Создаём RSS обработчик с поддержкой контекста
+	handlerRSS := usecase.NewRSSHandler(repo, rssURLs, requestPeriod, ctx)
+
+	var wg sync.WaitGroup
+
+	// Запускаем HTTP сервер
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		if err := srv.Run("8000", handlerRouterNews.InitRouter()); err != nil {
-			fmt.Errorf("Error occured while running http sever: %s", err.Error())
+			fmt.Printf("Error occurred while running HTTP server: %s\n", err.Error())
 		}
 	}()
 
-	go handlerRSS.Start()
+	// Запускаем RSS обработчик
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		handlerRSS.Start()
+	}()
 
-	for item := range handlerRSS.Output {
-		fmt.Printf("New item: %s\n", item.Title)
+	// Ожидаем сигнала завершения
+	<-ctx.Done()
+	fmt.Println("Shutting down server...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		fmt.Printf("Error shutting down server: %s\n", err.Error())
 	}
+
+	// Ожидаем завершения всех горутин
+	wg.Wait()
+	fmt.Println("Application stopped")
 }
