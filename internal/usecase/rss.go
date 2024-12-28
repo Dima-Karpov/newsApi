@@ -16,7 +16,12 @@ type RSSHandler struct {
 	ctx          context.Context
 }
 
-func NewRSSHandler(repo *repository.Repository, urls []string, pollInterval time.Duration, ctx context.Context) *RSSHandler {
+func NewRSSHandler(
+	repo *repository.Repository,
+	urls []string,
+	pollInterval time.Duration,
+	ctx context.Context,
+) *RSSHandler {
 	return &RSSHandler{
 		repo:         repo,
 		rssURLs:      urls,

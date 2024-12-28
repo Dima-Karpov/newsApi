@@ -1,4 +1,3 @@
-
 help :
 	@echo "Help information, please run specific target:"
 	@IFS=$$'\n' ; \
@@ -17,8 +16,7 @@ api-doc: ## Generate API DOC
 test: ## Run the tests
 	@go test -v ./...
 
-make install:  ## Build and up project
-	@docker compose up -d --build
-
-#migrate: ## Roll out migrations (only once)
-#	migrate -path ./schema -database 'postgres://postgres:qwerty@0.0.0.0:5438/postgres?sslmode=disable' up
+install: ## Setting up API
+	@docker compose down -v
+	@docker compose build
+	@docker compose up -d
