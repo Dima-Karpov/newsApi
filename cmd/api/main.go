@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"newsApi/configs"
 	"newsApi/internal/delivery/router"
@@ -10,6 +11,7 @@ import (
 	"newsApi/internal/repository"
 	"newsApi/internal/service"
 	"newsApi/internal/usecase"
+	"os"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -29,11 +31,22 @@ func main() {
 		log.Fatalf("Error loading config: %s\n", err.Error())
 	}
 
+	// Загрузка переменных окружения из файла .env
+	if err = godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
+	)
+
 	rssURLs := cfg.RSS
 	requestPeriod := time.Duration(cfg.RequestPeriod) * time.Minute
-	cfgDB := repository.Config{
-		DSN: "host=db port=5432 user=news password=OvoIpFrIL2VS dbname=api sslmode=disable",
-	}
+	cfgDB := repository.Config{DSN: dsn}
 
 	db, err := repository.NewPostgresDB(cfgDB)
 	if err != nil {

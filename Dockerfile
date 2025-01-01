@@ -19,8 +19,9 @@ FROM alpine
 
 COPY --from=builder /usr/local/src/bin/app /
 
-# Копируем папку configs с конфигами в контейнер
+# Копируем папку configs and .env с конфигами в контейнер
 COPY --from=builder /usr/local/src/configs /configs
+COPY --from=builder /usr/local/src/.env /.env
 
 
 CMD ["/app"]

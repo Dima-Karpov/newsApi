@@ -5,17 +5,11 @@ services:
       - "8000:8000"
     build:
       context: .
-    env_file:
-      - .env
     restart: unless-stopped
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=news
-      - DB_PASSWORD=OvoIpFrIL2VS
-      - DB_NAME=api
+    env_file:
+      - .env
     command: /bin/sh -c "sleep 10 && /app"  # Ждем 10 секунд перед запуском
 
   db:
@@ -26,9 +20,9 @@ services:
     ports:
       - "5440:5432"
     environment:
-      - POSTGRES_USER=news
-      - POSTGRES_PASSWORD=OvoIpFrIL2VS
-      - POSTGRES_DB=api  # Обратите внимание на имя базы данных
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./migrations:/migrations
@@ -43,9 +37,9 @@ services:
       until pg_isready -h db -p 5432 -U news; do sleep 1; done &&
       psql -h db -U news -d api -f /migrations/schema/up.sql"
     environment:
-      - POSTGRES_USER=news
-      - POSTGRES_PASSWORD=OvoIpFrIL2VS
-      - POSTGRES_DB=api
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     volumes:
       - ./migrations:/migrations
 
