@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"newsApi/configs"
 	"newsApi/internal/delivery/router"
 	delivery "newsApi/internal/delivery/server"
@@ -15,11 +16,17 @@ import (
 	"time"
 )
 
+// @title News API
+// @version 1.0
+// @description API Server for NewsApi Application
+
+// @host localhost:8000
+// @BasePath /
+
 func main() {
 	cfg, err := configs.LoadConfig("configs/config.json")
 	if err != nil {
-		fmt.Printf("Error loading config: %s\n", err.Error())
-		return
+		log.Fatalf("Error loading config: %s\n", err.Error())
 	}
 
 	rssURLs := cfg.RSS

@@ -16,6 +16,19 @@ type getNewsResponse struct {
 	TotalPages  int               `json:"totalPages"`
 }
 
+// @Summary Get news
+// @Tags news
+// @Description get news
+// @Accept  json
+// @Produce  json
+//
+//	@Param        page    query     number  false  "page"  Format(number)
+//
+// @Success 200 {object} getNewsResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /news [get]
 func (h *Handler) getNews(c *gin.Context) {
 	// Получаем параметр page из query-параметров, eсли его нет, по умолчанию ставим 1
 	page := c.DefaultQuery("page", "1")

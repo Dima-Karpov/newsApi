@@ -11,7 +11,7 @@ help :
 	done
 
 api-doc: ## Generate API DOC
-	@swag init -g cmd/postgresql/main.go
+	@swag init -g cmd/api/main.go
 
 test: ## Run the tests
 	@go test -v ./...

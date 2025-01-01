@@ -3,7 +3,6 @@
 ```
 git pull git@github.com:Dima-Karpov/newsApi.git
 make install
-make up
 ```
 
 ### migrate

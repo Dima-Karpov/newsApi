@@ -1,0 +1,85 @@
+basePath: /
+definitions:
+  domain.NewsList:
+    properties:
+      description:
+        description: TEXT
+        type: string
+      id:
+        description: Поле id как SERIAL
+        type: string
+      link:
+        description: VARCHAR(255) UNIQUE
+        type: string
+      publishedAt:
+        description: TIMESTAMP
+        type: string
+      title:
+        description: VARCHAR(255)
+        type: string
+    type: object
+  router.errorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  router.getNewsResponse:
+    properties:
+      currentPage:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/domain.NewsList'
+        type: array
+      limit:
+        type: integer
+      totalCount:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: API Server for NewsApi Application
+  title: News API
+  version: "1.0"
+paths:
+  /news:
+    get:
+      consumes:
+      - application/json
+      description: get news
+      parameters:
+      - description: page
+        format: number
+        in: query
+        name: page
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/router.getNewsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+      summary: Get news
+      tags:
+      - news
+swagger: "2.0"
