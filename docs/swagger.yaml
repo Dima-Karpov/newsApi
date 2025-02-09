@@ -56,6 +56,16 @@ paths:
         in: query
         name: page
         type: number
+      - description: fromDate
+        format: string
+        in: query
+        name: fromDate
+        type: string
+      - description: toDate
+        format: toDate
+        in: query
+        name: toDate
+        type: string
       produces:
       - application/json
       responses:
@@ -79,7 +89,45 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/router.errorResponse'
-      summary: Get news
+      summary: Get all news
+      tags:
+      - news
+  /news/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get news by id
+      operationId: get-news-by-id
+      parameters:
+      - description: ID list
+        in: path
+        name: id
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.NewsList'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/router.errorResponse'
+      summary: Get news By ID
       tags:
       - news
 swagger: "2.0"

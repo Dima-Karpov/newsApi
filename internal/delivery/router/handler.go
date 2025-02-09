@@ -24,7 +24,8 @@ func (h *Handler) InitRouter() *gin.Engine {
 
 	news := router.Group("/news")
 	{
-		news.GET("/", h.getNews)
+		news.GET("/", h.getAllNews)
+		news.GET("/:id", h.getNews)
 	}
 
 	return router

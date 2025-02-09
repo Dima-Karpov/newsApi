@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"newsApi/internal/domain"
+	"time"
 )
 
 type NewsRepository struct {
@@ -49,24 +50,69 @@ func (r *NewsRepository) Save(news *domain.RSSItem) error {
 }
 
 // GetNews возвращает все стати
-func (r *NewsRepository) GetNews(page, pageSize int) ([]domain.NewsList, int, error) {
+func (r *NewsRepository) GetNews(page, pageSize int, fromDateStr, toDateStr *string) ([]domain.NewsList, int, error) {
 	var newsList []domain.NewsList
 
-	// Вычисляем смещение (offset) для пагинации
-	offset := (page - 1) * pageSize
+	// Парсим даты, если они переданы
+	var fromDate, toDate *time.Time
 
-	// Получаем новости с ограничением (limit) и смещением (offset)
-	err := r.db.Limit(pageSize).Offset(offset).Find(&newsList).Error
-	if err != nil {
-		return newsList, 0, errors.New("Error getting news: " + err.Error())
+	if fromDateStr != nil {
+		parsedfromDate, err := time.Parse("2006-01-02", *fromDateStr)
+		if err == nil {
+			fromDate = &parsedfromDate
+		}
 	}
 
-	// Подсчитываем общее количество новостей
+	if toDateStr != nil {
+		parsedfromDate, err := time.Parse("2006-01-02", *toDateStr)
+		if err == nil {
+			toDate = &parsedfromDate
+		}
+	}
+
+	// Формируем запрос
+	query := r.db
+
+	// Если переадана начальная дата (fromDate), фильтрируем записи "больше или равно"
+	if fromDate != nil {
+		query = query.Where("published_at >= ? ", *fromDate)
+	}
+
+	// Если переадана конечная дата (toDate), фильтрируем записи "меньше или равно"
+	if toDate != nil {
+		query = query.Where("published_at <= ? ", *toDate)
+	}
+
+	// Подсчитываем общее количество новостей после фильтрации
 	var totalCount int64
-	err = r.db.Model(&domain.NewsList{}).Count(&totalCount).Error
+	err := query.Model(&domain.NewsList{}).Count(&totalCount).Error
 	if err != nil {
 		return newsList, 0, errors.New("Error counting news: " + err.Error())
 	}
 
+	// Вычисляем смещение (offset) для пагинации
+	offset := (page - 1) * pageSize
+
+	// Получаем новости с сортировкой по убыванию даты (новые первыми), пагинацией и фильтром
+	err = query.Order("published_at DESC").Limit(pageSize).Offset(offset).Find(&newsList).Error
+	if err != nil {
+		return newsList, 0, errors.New("Error getting news: " + err.Error())
+	}
+
 	return newsList, int(totalCount), nil
+}
+
+// GetNew возвращает статью по id
+func (r *NewsRepository) GetNew(id uuid.UUID) (domain.NewsList, error) {
+	var news domain.NewsList
+
+	err := r.db.Where("id = ?", id).First(&news).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return news, errors.New("News not found")
+		}
+		return news, errors.New("Error getting news: " + err.Error())
+	}
+
+	return news, nil
 }
