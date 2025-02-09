@@ -1,12 +1,14 @@
 package service
 
 import (
+	"github.com/google/uuid"
 	"newsApi/internal/domain"
 	"newsApi/internal/repository"
 )
 
 type NewsList interface {
-	GetNews(page, pageSize int) ([]domain.NewsList, int, error)
+	GetNews(page, pageSize int, fromDateStr, toDateStr *string) ([]domain.NewsList, int, error)
+	GetNew(id uuid.UUID) (domain.NewsList, error)
 }
 
 type Service struct {

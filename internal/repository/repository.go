@@ -1,13 +1,15 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"newsApi/internal/domain"
 )
 
 type News interface {
 	Save(news *domain.RSSItem) error
-	GetNews(page, pageSize int) ([]domain.NewsList, int, error)
+	GetNews(page, pageSize int, fromDateStr, toDateStr *string) ([]domain.NewsList, int, error)
+	GetNew(id uuid.UUID) (domain.NewsList, error)
 }
 
 type Repository struct {
