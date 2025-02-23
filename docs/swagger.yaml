@@ -51,6 +51,11 @@ paths:
       - application/json
       description: get news
       parameters:
+      - description: temp
+        format: string
+        in: query
+        name: temp
+        type: string
       - description: page
         format: number
         in: query
@@ -62,7 +67,7 @@ paths:
         name: fromDate
         type: string
       - description: toDate
-        format: toDate
+        format: string
         in: query
         name: toDate
         type: string
