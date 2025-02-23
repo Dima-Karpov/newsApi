@@ -23,9 +23,10 @@ type getNewsResponse struct {
 // @Accept  json
 // @Produce  json
 //
+//	@Param        temp    	  query     string  false  "temp"      Format(string)
 //	@Param        page    	  query     number  false  "page"      Format(number)
 //	@Param        fromDate    query     string  false  "fromDate"  Format(string)
-//	@Param        toDate      query     string  false  "toDate"    Format(toDate)
+//	@Param        toDate      query     string  false  "toDate"    Format(string)
 //
 // @Success 200 {object} getNewsResponse
 // @Failure 400,404 {object} errorResponse
@@ -39,13 +40,17 @@ func (h *Handler) getAllNews(c *gin.Context) {
 	// Читаем параметры date из запроса
 	fromDateStr := c.Query("fromDate")
 	toDateStr := c.Query("toDate")
+	tempStr := c.Query("temp")
 
-	var fromDate, toDate *string
+	var fromDate, toDate, temp *string
 	if fromDateStr != "" {
 		fromDate = &fromDateStr
 	}
 	if toDateStr != "" {
 		toDate = &toDateStr
+	}
+	if tempStr != "" {
+		temp = &tempStr
 	}
 
 	// Преобразуем парамтр page в число
@@ -56,7 +61,7 @@ func (h *Handler) getAllNews(c *gin.Context) {
 	}
 	limit := 10
 
-	news, totalCount, err := h.services.GetNews(pageInt, limit, fromDate, toDate)
+	news, totalCount, err := h.services.GetNews(pageInt, limit, fromDate, toDate, temp)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
