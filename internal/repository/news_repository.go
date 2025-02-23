@@ -50,51 +50,54 @@ func (r *NewsRepository) Save(news *domain.RSSItem) error {
 }
 
 // GetNews возвращает все стати
-func (r *NewsRepository) GetNews(page, pageSize int, fromDateStr, toDateStr *string) ([]domain.NewsList, int, error) {
+func (r *NewsRepository) GetNews(page, pageSize int, fromDateStr, toDateStr, temp *string) ([]domain.NewsList, int, error) {
 	var newsList []domain.NewsList
 
 	// Парсим даты, если они переданы
 	var fromDate, toDate *time.Time
 
 	if fromDateStr != nil {
-		parsedfromDate, err := time.Parse("2006-01-02", *fromDateStr)
+		parsedFromDate, err := time.Parse("2006-01-02", *fromDateStr)
 		if err == nil {
-			fromDate = &parsedfromDate
+			fromDate = &parsedFromDate
 		}
 	}
 
 	if toDateStr != nil {
-		parsedfromDate, err := time.Parse("2006-01-02", *toDateStr)
+		parsedToDate, err := time.Parse("2006-01-02", *toDateStr)
 		if err == nil {
-			toDate = &parsedfromDate
+			toDate = &parsedToDate
 		}
 	}
 
 	// Формируем запрос
-	query := r.db
+	query := r.db.Model(&domain.NewsList{})
 
-	// Если переадана начальная дата (fromDate), фильтрируем записи "больше или равно"
+	// Фильтрация по дате
 	if fromDate != nil {
 		query = query.Where("published_at >= ? ", *fromDate)
 	}
-
-	// Если переадана конечная дата (toDate), фильтрируем записи "меньше или равно"
 	if toDate != nil {
 		query = query.Where("published_at <= ? ", *toDate)
 	}
 
+	// Фильтрация по названию, если temp передан (поиск по подстроке, нечувствительный к регистру)
+	if temp != nil {
+		query = query.Where("LOWER(title) LIKE LOWER(?)", "%"+*temp+"%")
+	}
+
 	// Подсчитываем общее количество новостей после фильтрации
 	var totalCount int64
-	err := query.Model(&domain.NewsList{}).Count(&totalCount).Error
+	err := query.Count(&totalCount).Error
 	if err != nil {
 		return newsList, 0, errors.New("Error counting news: " + err.Error())
 	}
 
-	// Вычисляем смещение (offset) для пагинации
-	offset := (page - 1) * pageSize
+	// Определяем порядок сортировки
+	query = query.Order("published_at DESC")
 
-	// Получаем новости с сортировкой по убыванию даты (новые первыми), пагинацией и фильтром
-	err = query.Order("published_at DESC").Limit(pageSize).Offset(offset).Find(&newsList).Error
+	// Вычисляем смещение (offset) для пагинации
+	err = query.Limit(pageSize).Offset((page - 1) * pageSize).Find(&newsList).Error
 	if err != nil {
 		return newsList, 0, errors.New("Error getting news: " + err.Error())
 	}

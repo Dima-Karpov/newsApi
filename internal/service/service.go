@@ -7,7 +7,7 @@ import (
 )
 
 type NewsList interface {
-	GetNews(page, pageSize int, fromDateStr, toDateStr *string) ([]domain.NewsList, int, error)
+	GetNews(page, pageSize int, fromDateStr, toDateStr, temp *string) ([]domain.NewsList, int, error)
 	GetNew(id uuid.UUID) (domain.NewsList, error)
 }
 
