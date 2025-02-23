@@ -24,6 +24,13 @@
                 "summary": "Get all news",
                 "parameters": [
                     {
+                        "type": "string",
+                        "format": "string",
+                        "description": "temp",
+                        "name": "temp",
+                        "in": "query"
+                    },
+                    {
                         "type": "number",
                         "format": "number",
                         "description": "page",
@@ -39,7 +46,7 @@
                     },
                     {
                         "type": "string",
-                        "format": "toDate",
+                        "format": "string",
                         "description": "toDate",
                         "name": "toDate",
                         "in": "query"

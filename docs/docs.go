@@ -30,6 +30,13 @@ const docTemplate = `{
                 "summary": "Get all news",
                 "parameters": [
                     {
+                        "type": "string",
+                        "format": "string",
+                        "description": "temp",
+                        "name": "temp",
+                        "in": "query"
+                    },
+                    {
                         "type": "number",
                         "format": "number",
                         "description": "page",
@@ -45,7 +52,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "format": "toDate",
+                        "format": "string",
                         "description": "toDate",
                         "name": "toDate",
                         "in": "query"
