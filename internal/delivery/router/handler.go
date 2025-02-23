@@ -2,9 +2,11 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"newsApi/internal/service"
+	"newsApi/pkg/middleware"
 
 	_ "newsApi/docs"
 )
@@ -19,6 +21,8 @@ func NewHandler(services *service.Service) *Handler {
 
 func (h *Handler) InitRouter() *gin.Engine {
 	router := gin.New()
+	logger := logrus.New()
+	router.Use(middleware.RequestLoggerMiddleware(logger))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
